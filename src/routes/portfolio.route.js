@@ -72,8 +72,8 @@ router.put(
   "/:id",
   authMiddleware,
   upload.fields([
-    { name: "images", maxCount: 10 }, // add new images
-    { name: "Pdf", maxCount: 5 },     // optional
+    { name: "images", maxCount: 1 }, // add new images
+    { name: "Pdf", maxCount: 2 },     // optional
   ]),
   updatePortfolio
 );
