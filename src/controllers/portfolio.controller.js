@@ -1,201 +1,4 @@
-// import Portfolio from "../models/portfolio.model.js";
-// import path from "path";
-// import fs from "fs";
-// import { fileURLToPath } from "url";
-// import { dirname } from "path";
 
-// // Create a new portfolio document (with optional title)
-// export const createPortfolio = async (req, res) => {
-//     try {
-//         const { title, description } = req.body;
-        
-//         if (!title) {
-//             return res.status(400).json({ message: "Title is required" });
-//         }
-        
-//         // Check if files were uploaded via multer
-//         let images = [];
-        
-//         if (req.files && req.files.length > 0) {
-//             // Files uploaded - store file paths
-//             images = req.files.map(file => `/uploads/portfolio/${file.filename}`);
-//         } else if (req.body.images) {
-//             // URLs provided in body
-//             images = Array.isArray(req.body.images) ? req.body.images : [req.body.images];
-//         }
-        
-//         if (!images || images.length === 0) {
-//             return res.status(400).json({ message: "Images are required" });
-//         }
-
-//         const portfolio = new Portfolio({ title, description, images });
-//         await portfolio.save();
-//         res.status(201).json(portfolio);
-//     } catch (error) {
-//         res.status(500).json({ message: error.message });
-//     }
-// };
-
-// // Get all portfolio documents with pagination
-// export const getAllPortfolio = async (req, res) => {
-//     try {
-//         const page = parseInt(req.query.page) || 1;
-//         const limit = parseInt(req.query.limit) || 10;
-//         const skip = (page - 1) * limit;
-        
-//         const totalPortfolio = await Portfolio.countDocuments();
-//         const portfolio = await Portfolio.find().sort({ createdAt: -1 }).skip(skip).limit(limit);
-        
-//         res.status(200).json({
-//             portfolio,
-//             pagination: {
-//                 currentPage: page,
-//                 totalPages: Math.ceil(totalPortfolio / limit),
-//                 totalPortfolio,
-//                 hasNextPage: page < Math.ceil(totalPortfolio / limit),
-//                 hasPrevPage: page > 1
-//             }
-//         });
-//     } catch (error) {
-//         res.status(500).json({ message: error.message });
-//     }
-// };
-
-// // Get a single portfolio by ID
-// export const getPortfolioById = async (req, res) => {
-//     try {
-//         const portfolio = await Portfolio.findById(req.params.id);
-//         if (!portfolio) {
-//             return res.status(404).json({ message: "Portfolio not found" });
-//         }
-//         res.status(200).json(portfolio);
-//     } catch (error) {
-//         res.status(500).json({ message: error.message });
-//     }
-// };
-
-// // Update portfolio by ID
-// export const updatePortfolio = async (req, res) => {
-//     try {
-//         const { title, description } = req.body;
-        
-//         if (!title) {
-//             return res.status(400).json({ message: "Title is required" });
-//         }
-        
-//         // Get existing portfolio document to work with current images
-//         const existingPortfolio = await Portfolio.findById(req.params.id);
-//         if (!existingPortfolio) {
-//             return res.status(404).json({ message: "Portfolio not found" });
-//         }
-        
-//         // Start with existing images
-//         let finalImages = [...existingPortfolio.images];
-        
-//         // Handle images to delete
-//         // Since FormData can send multiple values with the same key, 
-//         // we need to handle both string and array cases
-//         let imagesToDelete = [];
-//         if (req.body.imagesToDelete) {
-//             // Check if it's a JSON string
-//             if (typeof req.body.imagesToDelete === 'string') {
-//                 try {
-//                     imagesToDelete = JSON.parse(req.body.imagesToDelete);
-//                 } catch (e) {
-//                     // If parsing fails, treat as single value
-//                     imagesToDelete = [req.body.imagesToDelete];
-//                 }
-//             } else if (Array.isArray(req.body.imagesToDelete)) {
-//                 imagesToDelete = req.body.imagesToDelete;
-//             } else {
-//                 // Single value
-//                 imagesToDelete = [req.body.imagesToDelete];
-//             }
-                
-//             // Remove deleted images from the array
-//             finalImages = finalImages.filter(image => !imagesToDelete.includes(image));
-//         }
-        
-//         // Handle new images uploaded via multer
-//         if (req.files && req.files.length > 0) {
-//             // Add new uploaded images
-//             const newImages = req.files.map(file => `/uploads/portfolio/${file.filename}`);
-//             finalImages = [...finalImages, ...newImages];
-//         } 
-//         // Handle images provided in body (for backward compatibility)
-//         else if (req.body.images) {
-//             const newImages = Array.isArray(req.body.images) ? req.body.images : [req.body.images];
-//             finalImages = [...finalImages, ...newImages];
-//         }
-        
-//         // Validate that we still have images
-//         if (finalImages.length === 0) {
-//             return res.status(400).json({ message: "At least one image is required" });
-//         }
-        
-//         // Update the document
-//         const portfolio = await Portfolio.findByIdAndUpdate(
-//             req.params.id,
-//             { title, description, images: finalImages },
-//             { new: true }
-//         );
-
-//         res.status(200).json(portfolio);
-//     } catch (error) {
-//         res.status(500).json({ message: error.message });
-//     }
-// };
-
-// // Delete portfolio by ID
-// // export const deletePortfolio = async (req, res) => {
-// //     try {
-// //         const portfolio = await Portfolio.findByIdAndDelete(req.params.id);
-// //         if (!portfolio) {
-// //             return res.status(404).json({ message: "Portfolio not found" });
-// //         }
-// //         res.status(200).json({ message: "Portfolio deleted successfully" });
-// //     } catch (error) {
-// //         res.status(500).json({ message: error.message });
-// //     }
-// // };
-// export const deletePortfolio = async (req, res) => {
-//     try {
-//         const portfolio = await Portfolio.findByIdAndDelete(req.params.id);
-//         if (!portfolio) {
-//             return res.status(404).json({ message: "Portfolio not found" });
-//         }
-
-//         // Delete all images associated with this portfolio
-//         if (Array.isArray(portfolio.images)) {
-//             for (let imagePath of portfolio.images) {
-//                 try {
-//                     // Remove any leading slash
-//                     imagePath = imagePath.replace(/^\/+/, "");
-//                     const fullPath = path.join(process.cwd(), imagePath);
-
-//                     if (fs.existsSync(fullPath)) {
-//                         fs.unlinkSync(fullPath);
-//                         console.log("Deleted file:", fullPath);
-//                     }
-//                 } catch (err) {
-//                     console.error("Error deleting portfolio image:", err.message);
-//                 }
-//             }
-//         }
-
-//         // Optional: delete portfolio folder if you used per-portfolio folders
-//         // const portfolioFolderPath = path.join(process.cwd(), "uploads", "portfolio", portfolio._id.toString());
-//         // if (fs.existsSync(portfolioFolderPath) && fs.readdirSync(portfolioFolderPath).length === 0) {
-//         //     fs.rmdirSync(portfolioFolderPath);
-//         // }
-
-//         res.status(200).json({ message: "Portfolio and images deleted successfully" });
-
-//     } catch (error) {
-//         console.error("Error deleting portfolio:", error);
-//         res.status(500).json({ message: "Failed to delete portfolio release" });
-//     }
-// };
 import Portfolio from "../models/portfolio.model.js";
 import fs from "fs";
 import path from "path";
@@ -203,7 +6,8 @@ import path from "path";
 /* =========================================================
    CREATE PORTFOLIO
    - Image: REQUIRED
-   - PDF: OPTIONAL (future ready)
+   - PDF: OPTIONAL
+   - invest: optional boolean (from string or boolean)
 ========================================================= */
 export const createPortfolio = async (req, res) => {
   try {
@@ -213,26 +17,20 @@ export const createPortfolio = async (req, res) => {
       return res.status(400).json({ message: "Title is required" });
     }
 
-    // Convert invest string to boolean
     const investBool = invest === "true" || invest === true;
 
-    const images =
-      req.files?.images?.map(file => `/uploads/portfolio/${file.filename}`) || [];
+    const images = req.files?.images?.map(file => `/uploads/portfolio/${file.filename}`) || [];
+    const pdfs   = req.files?.Pdf?.map(file => `/uploads/pdfs/${file.filename}`) || [];
 
-    const Pdf =
-      req.files?.Pdf?.map(file => `/uploads/pdfs/${file.filename}`) || [];
-
-    if (images.length === 0) {
-      return res.status(400).json({
-        message: "At least one image is required",
-      });
-    }
+    // if (images.length === 0) {
+    //   return res.status(400).json({ message: "At least one image is required" });
+    // }
 
     const portfolio = await Portfolio.create({
       title,
-      description,
+      description: description || "",
       images,
-      Pdf,
+      Pdf: pdfs,
       invest: investBool,
     });
 
@@ -241,13 +39,13 @@ export const createPortfolio = async (req, res) => {
       portfolio,
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("Create portfolio error:", error);
+    res.status(500).json({ message: error.message || "Server error" });
   }
 };
 
-
 /* =========================================================
-   GET ALL PORTFOLIOS (PAGINATION)
+   GET ALL PORTFOLIOS (WITH PAGINATION)
 ========================================================= */
 export const getAllPortfolio = async (req, res) => {
   try {
@@ -274,12 +72,13 @@ export const getAllPortfolio = async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("Get all portfolios error:", error);
+    res.status(500).json({ message: error.message || "Server error" });
   }
 };
 
 /* =========================================================
-   GET PORTFOLIO BY ID
+   GET SINGLE PORTFOLIO BY ID
 ========================================================= */
 export const getPortfolioById = async (req, res) => {
   try {
@@ -291,19 +90,21 @@ export const getPortfolioById = async (req, res) => {
 
     res.status(200).json(portfolio);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("Get portfolio by ID error:", error);
+    res.status(500).json({ message: error.message || "Server error" });
   }
 };
 
 /* =========================================================
    UPDATE PORTFOLIO
-   - Keep old images
-   - Delete selected images
-   - Add new images
+   - Supports: title, description, invest
+   - Image deletion + new images
+   - PDF deletion + new PDFs
+   - At least one image required
 ========================================================= */
 export const updatePortfolio = async (req, res) => {
   try {
-    const { title, description } = req.body;
+    const { title, description, invest } = req.body;
 
     if (!title) {
       return res.status(400).json({ message: "Title is required" });
@@ -314,48 +115,86 @@ export const updatePortfolio = async (req, res) => {
       return res.status(404).json({ message: "Portfolio not found" });
     }
 
-    let finalImages = [...portfolio.images];
+    let finalImages = [...(portfolio.images || [])];
+    let finalPdfs   = [...(portfolio.Pdf || [])];
 
-    /* ---------- DELETE IMAGES ---------- */
+    // ── Images deletion ────────────────────────────────────────
     if (req.body.imagesToDelete) {
-      let imagesToDelete = [];
-
+      let toDelete = [];
       try {
-        imagesToDelete = Array.isArray(req.body.imagesToDelete)
+        toDelete = Array.isArray(req.body.imagesToDelete)
           ? req.body.imagesToDelete
           : JSON.parse(req.body.imagesToDelete);
       } catch {
-        imagesToDelete = [req.body.imagesToDelete];
+        toDelete = [req.body.imagesToDelete];
       }
 
-      finalImages = finalImages.filter(
-        img => !imagesToDelete.includes(img)
-      );
+      finalImages = finalImages.filter(img => !toDelete.includes(img));
 
-      // Remove files from disk
-      imagesToDelete.forEach(img => {
-        const filePath = path.join(process.cwd(), img.replace(/^\/+/, ""));
-        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+      // Delete files from disk
+      toDelete.forEach(imgPath => {
+        const filePath = path.join(process.cwd(), imgPath.replace(/^\/+/, ""));
+        if (fs.existsSync(filePath)) {
+          try {
+            fs.unlinkSync(filePath);
+          } catch (err) {
+            console.warn(`Failed to delete image: ${filePath}`, err.message);
+          }
+        }
       });
     }
 
-    /* ---------- ADD NEW IMAGES ---------- */
+    // ── Add new images ─────────────────────────────────────────
     if (req.files?.images?.length) {
-      const newImages = req.files.images.map(
-        file => `/uploads/portfolio/${file.filename}`
-      );
-      finalImages.push(...newImages);
+      const newPaths = req.files.images.map(f => `/uploads/portfolio/${f.filename}`);
+      finalImages.push(...newPaths);
     }
 
     if (finalImages.length === 0) {
-      return res.status(400).json({
-        message: "At least one image is required",
+      return res.status(400).json({ message: "At least one image is required" });
+    }
+
+    // ── PDFs deletion ──────────────────────────────────────────
+    if (req.body.pdfsToDelete) {
+      let toDelete = [];
+      try {
+        toDelete = Array.isArray(req.body.pdfsToDelete)
+          ? req.body.pdfsToDelete
+          : JSON.parse(req.body.pdfsToDelete);
+      } catch {
+        toDelete = [req.body.pdfsToDelete];
+      }
+
+      finalPdfs = finalPdfs.filter(pdf => !toDelete.includes(pdf));
+
+      // Delete files from disk
+      toDelete.forEach(pdfPath => {
+        const filePath = path.join(process.cwd(), pdfPath.replace(/^\/+/, ""));
+        if (fs.existsSync(filePath)) {
+          try {
+            fs.unlinkSync(filePath);
+          } catch (err) {
+            console.warn(`Failed to delete PDF: ${filePath}`, err.message);
+          }
+        }
       });
     }
 
-    portfolio.title = title;
-    portfolio.description = description;
-    portfolio.images = finalImages;
+    // ── Add new PDFs ───────────────────────────────────────────
+    if (req.files?.Pdf?.length) {
+      const newPaths = req.files.Pdf.map(f => `/uploads/pdfs/${f.filename}`);
+      finalPdfs.push(...newPaths);
+    }
+
+    // ── Apply updates ──────────────────────────────────────────
+    portfolio.title       = title;
+    portfolio.description = description || portfolio.description;
+    portfolio.images      = finalImages;
+    portfolio.Pdf         = finalPdfs;
+
+    if (invest !== undefined) {
+      portfolio.invest = invest === "true" || invest === true;
+    }
 
     await portfolio.save();
 
@@ -364,12 +203,13 @@ export const updatePortfolio = async (req, res) => {
       portfolio,
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("Update portfolio error:", error);
+    res.status(500).json({ message: error.message || "Server error during update" });
   }
 };
 
 /* =========================================================
-   DELETE PORTFOLIO + FILES
+   DELETE PORTFOLIO + ASSOCIATED FILES
 ========================================================= */
 export const deletePortfolio = async (req, res) => {
   try {
@@ -384,15 +224,22 @@ export const deletePortfolio = async (req, res) => {
       ...(portfolio.Pdf || []),
     ];
 
-    files.forEach(file => {
-      const filePath = path.join(process.cwd(), file.replace(/^\/+/, ""));
-      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    files.forEach(filePath => {
+      const fullPath = path.join(process.cwd(), filePath.replace(/^\/+/, ""));
+      if (fs.existsSync(fullPath)) {
+        try {
+          fs.unlinkSync(fullPath);
+        } catch (err) {
+          console.warn(`Failed to delete file: ${fullPath}`, err.message);
+        }
+      }
     });
 
     res.status(200).json({
-      message: "Portfolio and files deleted successfully",
+      message: "Portfolio and associated files deleted successfully",
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("Delete portfolio error:", error);
+    res.status(500).json({ message: error.message || "Server error" });
   }
 };
