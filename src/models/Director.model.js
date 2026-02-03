@@ -8,6 +8,12 @@ const DirectorSchema = new mongoose.Schema(
       trim: true,
     },
 
+    alternativeName: {
+      type: String,
+      
+      trim: true,
+    },
+
     title: {
       type: String,
       required: true,

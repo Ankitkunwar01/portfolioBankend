@@ -10,6 +10,7 @@ export const createDirector = async (req, res) => {
   try {
     const {
       name,
+      alternativeName,
       title,
       description,
       education,
@@ -35,6 +36,7 @@ export const createDirector = async (req, res) => {
 
     const director = await Director.create({
       name,
+      alternativeName,
       title,
       image: imagePath,
       description,
@@ -123,6 +125,7 @@ export const updateDirector = async (req, res) => {
 
     const {
       name,
+      alternativeName,
       title,
       description,
       education,
@@ -157,6 +160,7 @@ export const updateDirector = async (req, res) => {
 
     // ── Apply updates ────────────────────────────────────────
     director.name = name ?? director.name;
+    director.alternativeName = alternativeName ?? director.alternativeName;
     director.title = title ?? director.title;
     director.description = description ?? director.description;
     director.education = education ?? director.education;
