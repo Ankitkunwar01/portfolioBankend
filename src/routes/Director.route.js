@@ -31,6 +31,6 @@ router.put("/:id", upload.single("image"),authMiddleware, updateDirector);
 /* =============================
    DELETE
 ============================= */
-router.delete("/:id", authMiddleware,deleteDirector);
+router.delete("/:id", authMiddleware ,deleteDirector);
 
 export default router;

@@ -138,15 +138,20 @@ export const updateDirector = async (req, res) => {
 
     // ── Image update ────────────────────────────────────────
     if (req.file) {
-      const oldImagePath = path.join(
-        process.cwd(),
-        director.image.replace(/^\/+/, "")
-      );
+      if (director.image) {
+        // remove leading slash and create absolute path
+        const oldImagePath = path.join(
+          process.cwd(),
+          director.image.replace(/^\/+/, "")
+        );
 
-      if (fs.existsSync(oldImagePath)) {
-        fs.unlinkSync(oldImagePath);
+        // delete only if file exists
+        if (fs.existsSync(oldImagePath)) {
+          fs.unlinkSync(oldImagePath);
+        }
       }
 
+      // set new image
       director.image = `/uploads/Director/${req.file.filename}`;
     }
 

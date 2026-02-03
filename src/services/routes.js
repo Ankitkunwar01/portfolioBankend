@@ -27,5 +27,8 @@ router.delete("/media/:id", authMiddleware, deleteMedia);
 
 
 
+
+
 router.use("/directors", directorRoute);
+
 export default router;
