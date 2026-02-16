@@ -14,28 +14,17 @@ import authMiddleware from "../middlewares/auth.middleware.js";
 
 const router = express.Router();
 
-/* =============================
-   CREATE
-============================= */
-router.post("/", upload.single("image"),authMiddleware, createDirector);
+router.post("/", upload.single("image"), authMiddleware, createDirector);
 
-/* =============================
-   READ
-============================= */
-router.get("/", getAllDirectors);        // GET all directors (pagination)
-router.get("/:id", getDirectorById);     // GET single director by ID
+router.get("/", getAllDirectors);
+router.get("/:id", getDirectorById);
 
-/* =============================
-   UPDATE
-============================= */
-router.put("/:id", upload.single("image"),authMiddleware, updateDirector);
-
-/* =============================
-   DELETE
-============================= */
-router.delete("/:id", authMiddleware ,deleteDirector);
-
-// NEW: Reorder directors
+// 🔥 reorder must come BEFORE :id
 router.put("/reorder", authMiddleware, reorderDirectors);
+
+router.put("/:id", upload.single("image"), authMiddleware, updateDirector);
+
+router.delete("/:id", authMiddleware, deleteDirector);
+
 
 export default router;
