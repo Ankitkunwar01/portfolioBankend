@@ -64,6 +64,35 @@ export const createDirector = async (req, res) => {
 /* =========================================================
    GET ALL DIRECTORS (WITH PAGINATION)
 ========================================================= */
+// export const getAllDirectors = async (req, res) => {
+//   try {
+//     const page = Math.max(parseInt(req.query.page) || 1, 1);
+//     const limit = Math.max(parseInt(req.query.limit) || 10, 1);
+//     const skip = (page - 1) * limit;
+
+//     const [total, directors] = await Promise.all([
+//       Director.countDocuments(),
+//       Director.find()
+//         .sort({ createdAt: -1 })
+//         .skip(skip)
+//         .limit(limit),
+//     ]);
+
+//     res.status(200).json({
+//       directors,
+//       pagination: {
+//         currentPage: page,
+//         totalPages: Math.ceil(total / limit),
+//         totalItems: total,
+//         hasNextPage: page * limit < total,
+//         hasPrevPage: page > 1,
+//       },
+//     });
+//   } catch (error) {
+//     console.error("Get directors error:", error);
+//     res.status(500).json({ message: error.message || "Server error" });
+//   }
+// };
 export const getAllDirectors = async (req, res) => {
   try {
     const page = Math.max(parseInt(req.query.page) || 1, 1);
@@ -73,7 +102,7 @@ export const getAllDirectors = async (req, res) => {
     const [total, directors] = await Promise.all([
       Director.countDocuments(),
       Director.find()
-        .sort({ createdAt: -1 })
+        .sort({ order: 1, createdAt: -1 }) // 🔥 order first, then newest fallback
         .skip(skip)
         .limit(limit),
     ]);
@@ -93,6 +122,7 @@ export const getAllDirectors = async (req, res) => {
     res.status(500).json({ message: error.message || "Server error" });
   }
 };
+
 
 /* =========================================================
    GET SINGLE DIRECTOR BY ID
@@ -210,6 +240,31 @@ export const deleteDirector = async (req, res) => {
     });
   } catch (error) {
     console.error("Delete director error:", error);
+    res.status(500).json({ message: error.message || "Server error" });
+  }
+};
+
+export const reorderDirectors = async (req, res) => {
+  try {
+    const { directors } = req.body; // [{ _id, order }]
+    if (!directors || !Array.isArray(directors)) {
+      return res.status(400).json({ message: "Invalid directors array" });
+    }
+
+    const bulkOps = directors.map(d => ({
+      updateOne: {
+        filter: { _id: d._id },
+        update: { order: d.order },
+      }
+    }));
+
+    if (bulkOps.length > 0) {
+      await Director.bulkWrite(bulkOps);
+    }
+
+    res.status(200).json({ message: "Directors reordered successfully" });
+  } catch (error) {
+    console.error("Reorder directors error:", error);
     res.status(500).json({ message: error.message || "Server error" });
   }
 };

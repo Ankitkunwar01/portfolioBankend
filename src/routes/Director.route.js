@@ -6,6 +6,8 @@ import {
   getDirectorById,
   updateDirector,
   deleteDirector,
+  reorderDirectors,
+
 } from "../controllers/Director.controller.js";
 import authMiddleware from "../middlewares/auth.middleware.js";
 
@@ -32,5 +34,8 @@ router.put("/:id", upload.single("image"),authMiddleware, updateDirector);
    DELETE
 ============================= */
 router.delete("/:id", authMiddleware ,deleteDirector);
+
+// NEW: Reorder directors
+router.put("/reorder", authMiddleware, reorderDirectors);
 
 export default router;

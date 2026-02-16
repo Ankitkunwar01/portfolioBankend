@@ -67,6 +67,7 @@ const DirectorSchema = new mongoose.Schema(
       of: String, // e.g. { linkedin: "", twitter: "" }
       default: {},
     },
+    order: { type: Number, default: 0 },
 
     portfolio: {
       type: String, // URL
