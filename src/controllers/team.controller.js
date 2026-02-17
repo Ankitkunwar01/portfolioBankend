@@ -1,6 +1,5 @@
 import Team from "../models/team.model.js";
-import fs from "fs";
-import path from "path";
+import cloudinary from "../utils/cloudinary.js";
 
 /* =========================================================
    CREATE TEAM MEMBER
@@ -11,23 +10,29 @@ export const createTeamMember = async (req, res) => {
     const { name, role, socialMedia } = req.body;
 
     if (!name || !role) {
-      return res.status(400).json({
-        message: "Name and role are required",
-      });
+      return res.status(400).json({ message: "Name and role are required" });
     }
 
     if (!req.file) {
-      return res.status(400).json({
-        message: "Team member image is required",
-      });
+      return res.status(400).json({ message: "Team member image is required" });
     }
 
-    const imagePath = `/uploads/team/${req.file.filename}`;
+    // Upload image to Cloudinary
+    const streamUpload = (fileBuffer) =>
+      new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          { folder: "Team" },
+          (error, result) => (result ? resolve(result) : reject(error))
+        );
+        stream.end(fileBuffer);
+      });
+
+    const result = await streamUpload(req.file.buffer);
 
     const teamMember = await Team.create({
       name,
       role,
-      image: imagePath,
+      image: result.secure_url, // Cloudinary URL
       socialMedia: socialMedia ? JSON.parse(socialMedia) : [],
     });
 
@@ -37,9 +42,7 @@ export const createTeamMember = async (req, res) => {
     });
   } catch (error) {
     console.error("Create team member error:", error);
-    res.status(500).json({
-      message: error.message || "Server error",
-    });
+    res.status(500).json({ message: error.message || "Server error" });
   }
 };
 
@@ -54,10 +57,7 @@ export const getAllTeamMembers = async (req, res) => {
 
     const [total, teamMembers] = await Promise.all([
       Team.countDocuments(),
-      Team.find()
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit),
+      Team.find().sort({ createdAt: -1 }).skip(skip).limit(limit),
     ]);
 
     res.status(200).json({
@@ -72,9 +72,7 @@ export const getAllTeamMembers = async (req, res) => {
     });
   } catch (error) {
     console.error("Get team members error:", error);
-    res.status(500).json({
-      message: error.message || "Server error",
-    });
+    res.status(500).json({ message: error.message || "Server error" });
   }
 };
 
@@ -86,17 +84,13 @@ export const getTeamMemberById = async (req, res) => {
     const teamMember = await Team.findById(req.params.id);
 
     if (!teamMember) {
-      return res.status(404).json({
-        message: "Team member not found",
-      });
+      return res.status(404).json({ message: "Team member not found" });
     }
 
     res.status(200).json(teamMember);
   } catch (error) {
     console.error("Get team member by ID error:", error);
-    res.status(500).json({
-      message: error.message || "Server error",
-    });
+    res.status(500).json({ message: error.message || "Server error" });
   }
 };
 
@@ -108,27 +102,38 @@ export const updateTeamMember = async (req, res) => {
     const teamMember = await Team.findById(req.params.id);
 
     if (!teamMember) {
-      return res.status(404).json({
-        message: "Team member not found",
-      });
+      return res.status(404).json({ message: "Team member not found" });
     }
 
     const { name, role, socialMedia } = req.body;
 
     // ── Image update ────────────────────────────────────────
     if (req.file) {
+      // Delete old Cloudinary image if exists
       if (teamMember.image) {
-        const oldImagePath = path.join(
-          process.cwd(),
-          teamMember.image.replace(/^\/+/, "")
-        );
-
-        if (fs.existsSync(oldImagePath)) {
-          fs.unlinkSync(oldImagePath);
+        try {
+          const publicId = teamMember.image
+            .split("/")
+            .slice(-1)[0]
+            .split(".")[0];
+          await cloudinary.uploader.destroy(`Team/${publicId}`);
+        } catch (err) {
+          console.warn("Old image not deleted:", err.message);
         }
       }
 
-      teamMember.image = `/uploads/team/${req.file.filename}`;
+      // Upload new image
+      const streamUpload = (fileBuffer) =>
+        new Promise((resolve, reject) => {
+          const stream = cloudinary.uploader.upload_stream(
+            { folder: "Team" },
+            (error, result) => (result ? resolve(result) : reject(error))
+          );
+          stream.end(fileBuffer);
+        });
+
+      const result = await streamUpload(req.file.buffer);
+      teamMember.image = result.secure_url;
     }
 
     // ── Apply updates ────────────────────────────────────────
@@ -146,9 +151,7 @@ export const updateTeamMember = async (req, res) => {
     });
   } catch (error) {
     console.error("Update team member error:", error);
-    res.status(500).json({
-      message: error.message || "Server error",
-    });
+    res.status(500).json({ message: error.message || "Server error" });
   }
 };
 
@@ -160,27 +163,25 @@ export const deleteTeamMember = async (req, res) => {
     const teamMember = await Team.findByIdAndDelete(req.params.id);
 
     if (!teamMember) {
-      return res.status(404).json({
-        message: "Team member not found",
-      });
+      return res.status(404).json({ message: "Team member not found" });
     }
 
-    const imagePath = path.join(
-      process.cwd(),
-      teamMember.image.replace(/^\/+/, "")
-    );
-
-    if (fs.existsSync(imagePath)) {
-      fs.unlinkSync(imagePath);
+    // Delete Cloudinary image
+    if (teamMember.image) {
+      try {
+        const publicId = teamMember.image
+          .split("/")
+          .slice(-1)[0]
+          .split(".")[0];
+        await cloudinary.uploader.destroy(`Team/${publicId}`);
+      } catch (err) {
+        console.warn("Image not deleted:", err.message);
+      }
     }
 
-    res.status(200).json({
-      message: "Team member deleted successfully",
-    });
+    res.status(200).json({ message: "Team member deleted successfully" });
   } catch (error) {
     console.error("Delete team member error:", error);
-    res.status(500).json({
-      message: error.message || "Server error",
-    });
+    res.status(500).json({ message: error.message || "Server error" });
   }
 };

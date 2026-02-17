@@ -1,32 +1,4 @@
-// import express from "express";
-// import upload from "../config/portfolio.multer.js";
-// import authMiddleware from "../middlewares/auth.middleware.js";
-// import { uploadLimiter } from "../middlewares/rateLimit.middleware.js";
-// import {
-//     createPortfolio,
-//     getAllPortfolio,
-//     getPortfolioById,
-//     updatePortfolio,
-//     deletePortfolio,
-// } from "../controllers/portfolio.controller.js";
 
-// const router = express.Router();
-
-// // Create a new portfolio document
-// router.post("/", authMiddleware,  upload.array("images", 10), createPortfolio);
-
-// // Get all portfolio documents
-// router.get("/", getAllPortfolio);
-// // Get a single portfolio by ID
-// router.get("/:id", getPortfolioById);
-
-// // Update a portfolio document by ID
-// router.put("/:id", authMiddleware,  upload.array("images", 10), updatePortfolio);
-
-// // Delete a portfolio document by ID
-// router.delete("/:id", authMiddleware, deletePortfolio);
-
-// export default router;
 import express from "express";
 import upload from "../config/portfolio.multer.js";
 import authMiddleware from "../middlewares/auth.middleware.js";

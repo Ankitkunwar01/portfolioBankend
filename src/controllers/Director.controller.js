@@ -1,6 +1,7 @@
+
+
 import Director from "../models/Director.model.js";
-import fs from "fs";
-import path from "path";
+import cloudinary from "../utils/cloudinary.js";
 
 /* =========================================================
    CREATE DIRECTOR
@@ -32,13 +33,26 @@ export const createDirector = async (req, res) => {
       return res.status(400).json({ message: "Director image is required" });
     }
 
-    const imagePath = `/uploads/Director/${req.file.filename}`;
+    // ── Upload image to Cloudinary ─────────────────────────
+    const streamUpload = (fileBuffer) =>
+      new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          { folder: "Director" },
+          (error, result) => {
+            if (result) resolve(result);
+            else reject(error);
+          }
+        );
+        stream.end(fileBuffer);
+      });
+
+    const result = await streamUpload(req.file.buffer);
 
     const director = await Director.create({
       name,
       alternativeName,
       title,
-      image: imagePath,
+      image: result.secure_url,
       description,
       education,
       experience,
@@ -64,35 +78,6 @@ export const createDirector = async (req, res) => {
 /* =========================================================
    GET ALL DIRECTORS (WITH PAGINATION)
 ========================================================= */
-// export const getAllDirectors = async (req, res) => {
-//   try {
-//     const page = Math.max(parseInt(req.query.page) || 1, 1);
-//     const limit = Math.max(parseInt(req.query.limit) || 10, 1);
-//     const skip = (page - 1) * limit;
-
-//     const [total, directors] = await Promise.all([
-//       Director.countDocuments(),
-//       Director.find()
-//         .sort({ createdAt: -1 })
-//         .skip(skip)
-//         .limit(limit),
-//     ]);
-
-//     res.status(200).json({
-//       directors,
-//       pagination: {
-//         currentPage: page,
-//         totalPages: Math.ceil(total / limit),
-//         totalItems: total,
-//         hasNextPage: page * limit < total,
-//         hasPrevPage: page > 1,
-//       },
-//     });
-//   } catch (error) {
-//     console.error("Get directors error:", error);
-//     res.status(500).json({ message: error.message || "Server error" });
-//   }
-// };
 export const getAllDirectors = async (req, res) => {
   try {
     const page = Math.max(parseInt(req.query.page) || 1, 1);
@@ -102,7 +87,7 @@ export const getAllDirectors = async (req, res) => {
     const [total, directors] = await Promise.all([
       Director.countDocuments(),
       Director.find()
-        .sort({ order: 1, createdAt: -1 }) // 🔥 order first, then newest fallback
+        .sort({ order: 1, createdAt: -1 })
         .skip(skip)
         .limit(limit),
     ]);
@@ -122,7 +107,6 @@ export const getAllDirectors = async (req, res) => {
     res.status(500).json({ message: error.message || "Server error" });
   }
 };
-
 
 /* =========================================================
    GET SINGLE DIRECTOR BY ID
@@ -171,21 +155,34 @@ export const updateDirector = async (req, res) => {
 
     // ── Image update ────────────────────────────────────────
     if (req.file) {
+      // Delete old image from Cloudinary if exists
       if (director.image) {
-        // remove leading slash and create absolute path
-        const oldImagePath = path.join(
-          process.cwd(),
-          director.image.replace(/^\/+/, "")
-        );
+        const publicId = director.image
+          .split("/")
+          .slice(-1)[0]
+          .split(".")[0]; // get filename without extension
 
-        // delete only if file exists
-        if (fs.existsSync(oldImagePath)) {
-          fs.unlinkSync(oldImagePath);
+        try {
+          await cloudinary.uploader.destroy(`Director/${publicId}`);
+        } catch (err) {
+          console.warn("Old image not deleted:", err.message);
         }
       }
 
-      // set new image
-      director.image = `/uploads/Director/${req.file.filename}`;
+      const streamUpload = (fileBuffer) =>
+        new Promise((resolve, reject) => {
+          const stream = cloudinary.uploader.upload_stream(
+            { folder: "Director" },
+            (error, result) => {
+              if (result) resolve(result);
+              else reject(error);
+            }
+          );
+          stream.end(fileBuffer);
+        });
+
+      const result = await streamUpload(req.file.buffer);
+      director.image = result.secure_url;
     }
 
     // ── Apply updates ────────────────────────────────────────
@@ -226,13 +223,17 @@ export const deleteDirector = async (req, res) => {
       return res.status(404).json({ message: "Director not found" });
     }
 
-    const imagePath = path.join(
-      process.cwd(),
-      director.image.replace(/^\/+/, "")
-    );
+    if (director.image) {
+      const publicId = director.image
+        .split("/")
+        .slice(-1)[0]
+        .split(".")[0]; // get filename without extension
 
-    if (fs.existsSync(imagePath)) {
-      fs.unlinkSync(imagePath);
+      try {
+        await cloudinary.uploader.destroy(`Director/${publicId}`);
+      } catch (err) {
+        console.warn("Image not deleted:", err.message);
+      }
     }
 
     res.status(200).json({
@@ -244,6 +245,9 @@ export const deleteDirector = async (req, res) => {
   }
 };
 
+/* =========================================================
+   REORDER DIRECTORS
+========================================================= */
 export const reorderDirectors = async (req, res) => {
   try {
     const { directors } = req.body; // [{ _id, order }]

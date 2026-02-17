@@ -19,7 +19,7 @@ router.post("/", upload.single("image"), authMiddleware, createDirector);
 router.get("/", getAllDirectors);
 router.get("/:id", getDirectorById);
 
-// 🔥 reorder must come BEFORE :id
+//  reorder must come BEFORE :id
 router.put("/reorder", authMiddleware, reorderDirectors);
 
 router.put("/:id", upload.single("image"), authMiddleware, updateDirector);
