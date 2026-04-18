@@ -17,7 +17,7 @@ export const uploadCV = async (req, res) => {
       const stream = cloudinary.uploader.upload_stream(
         { 
           folder: "cv",
-          resource_type: "raw", // For PDF/other files
+          resource_type: "image", // Allows PDF transformations (thumbnails)
           access_mode: "public"
         },
         (error, result) => {
@@ -43,6 +43,16 @@ export const uploadCV = async (req, res) => {
   }
 };
 
+export const getLatestCV = async (req, res) => {
+  try {
+    const cv = await CV.findOne().sort({ createdAt: -1 });
+    if (!cv) return res.status(200).json(null);
+    res.status(200).json(cv);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 export const getAllCVs = async (req, res) => {
   try {
     const cvs = await CV.find().sort({ createdAt: -1 });
@@ -58,7 +68,7 @@ export const deleteCV = async (req, res) => {
     if (!cv) return res.status(404).json({ message: "CV not found" });
 
     // Delete from Cloudinary
-    await cloudinary.uploader.destroy(cv.publicId, { resource_type: "raw" });
+    await cloudinary.uploader.destroy(cv.publicId);
 
     await CV.findByIdAndDelete(req.params.id);
     res.status(200).json({ message: "CV deleted successfully" });
