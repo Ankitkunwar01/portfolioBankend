@@ -10,6 +10,9 @@ import upload from "../middlewares/upload.middleware.js";
 
 import directorRoute from "../routes/Director.route.js";
 import team from "../routes/team.route.js"
+import skillRoute from "../routes/skill.route.js";
+import serviceRoute from "../routes/service.route.js";
+import blogRoute from "../routes/blog.route.js";
 
 const router = express.Router();
 
@@ -19,10 +22,13 @@ router.use("/auth", authRoute);
 // Sub-routes
 router.use("/media", mediaRoutes);
 
-router.use("/portfolio", portfolioRoute);
+router.use("/projects", portfolioRoute);
 router.use("/contact", contactRoute);
 
 router.use("/team", team);
+router.use("/skills", skillRoute);
+router.use("/services", serviceRoute);
+router.use("/blogs", blogRoute);
 
 
 // Direct media routes with auth & upload
