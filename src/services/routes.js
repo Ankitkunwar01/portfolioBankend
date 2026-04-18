@@ -13,6 +13,7 @@ import team from "../routes/team.route.js"
 import skillRoute from "../routes/skill.route.js";
 import serviceRoute from "../routes/service.route.js";
 import blogRoute from "../routes/blog.route.js";
+import cvRoute from "../routes/cv.route.js";
 
 const router = express.Router();
 
@@ -30,6 +31,7 @@ router.use("/skills", skillRoute);
 router.use("/services", serviceRoute);
 router.use("/blogs", blogRoute);
 router.use("/notice", mediaRoutes);
+router.use("/cv", cvRoute);
 
 
 // Direct media routes with auth & upload
