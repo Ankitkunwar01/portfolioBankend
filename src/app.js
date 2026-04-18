@@ -14,7 +14,7 @@ const __dirname = path.dirname(__filename);
 // ========================
 // CORS (IMPORTANT for Vercel + Render)
 app.use(cors({
-  origin: "https://ankitkunwar-uw2g.vercel.app",
+  origin: "https://ankitkunwar.vercel.app",
   credentials: true
 }));
 
