@@ -23,7 +23,7 @@ app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 app.use("/api", routes);
 
 // ✅ FIXED PATH HERE
-const frontendPath = path.join(__dirname, "../client/dist");
+const frontendPath = path.join(__dirname, "../dist");
 
 app.use(express.static(frontendPath));
 
