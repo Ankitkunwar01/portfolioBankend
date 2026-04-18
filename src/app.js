@@ -7,7 +7,7 @@ import { fileURLToPath } from "url";
 
 const app = express();
 
-// Fix __dirname in ES modules
+// Fix __dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -16,22 +16,30 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Static uploads
+// ============================
+// Static uploads (safe)
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
+// ============================
 // API routes
 app.use("/api", routes);
 
-// ✅ FIXED PATH HERE
-const frontendPath = path.join(__dirname, "../");
+// ============================
+// FRONTEND SETUP (FIXED)
+// Use "dist" for Vite OR "build" for React CRA
+const frontendPath = path.join(process.cwd(), "dist"); 
+// change to "build" if using CRA
 
 app.use(express.static(frontendPath));
 
+// ============================
+// SPA fallback route
 app.get("*", (req, res) => {
   res.sendFile(path.join(frontendPath, "index.html"));
 });
 
-// Error handlers
+// ============================
+// Error middleware (clean)
 app.use(errorMiddleware);
 
 app.use((err, req, res, next) => {
@@ -40,7 +48,5 @@ app.use((err, req, res, next) => {
     message: err.message || "Server Error",
   });
 });
-
-
 
 export default app;
