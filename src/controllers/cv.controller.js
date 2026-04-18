@@ -17,8 +17,8 @@ export const uploadCV = async (req, res) => {
       const stream = cloudinary.uploader.upload_stream(
         { 
           folder: "cv",
-          resource_type: "image", // Allows PDF transformations (thumbnails)
-          access_mode: "public"
+          resource_type: "image", 
+          type: "upload" // Explicitly set to public upload
         },
         (error, result) => {
           if (error) return reject(error);
