@@ -7,41 +7,34 @@ import { fileURLToPath } from "url";
 
 const app = express();
 
-// Fix __dirname for ES modules
+// ES module fix
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// ========================
+// CORS (IMPORTANT for Vercel + Render)
+app.use(cors({
+  origin: "https://ankitkunwar-uw2g.vercel.app",
+  credentials: true
+}));
+
 // Middleware
-app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ============================
-// Static uploads (safe)
+// ========================
+// Uploads (optional)
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
-// ============================
-// API routes
+// ========================
+// API ROUTES ONLY
 app.use("/api", routes);
 
-// ============================
-// FRONTEND SETUP (FIXED)
-// Use "dist" for Vite OR "build" for React CRA
-const frontendPath = path.join(process.cwd(), "dist"); 
-// change to "build" if using CRA
-
-app.use(express.static(frontendPath));
-
-// ============================
-// SPA fallback route
-app.get("*", (req, res) => {
-  res.sendFile(path.join(frontendPath, "index.html"));
-});
-
-// ============================
-// Error middleware (clean)
+// ========================
+// Error middleware
 app.use(errorMiddleware);
 
+// Global error handler
 app.use((err, req, res, next) => {
   res.status(500).json({
     success: false,
