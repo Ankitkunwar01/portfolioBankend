@@ -29,6 +29,7 @@ router.use("/team", team);
 router.use("/skills", skillRoute);
 router.use("/services", serviceRoute);
 router.use("/blogs", blogRoute);
+router.use("/notice", mediaRoutes);
 
 
 // Direct media routes with auth & upload
